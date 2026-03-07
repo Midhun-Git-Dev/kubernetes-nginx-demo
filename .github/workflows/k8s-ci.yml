@@ -1,0 +1,29 @@
+
+name: Kubernetes CI
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
+
+      - name: Validate Kubernetes YAML
+        run: |
+          kubectl apply --dry-run=client -f namespace.yaml
+          kubectl apply --dry-run=client -f configmap.yaml
+          kubectl apply --dry-run=client -f secret.yaml
+          kubectl apply --dry-run=client -f deployment.yaml
+          kubectl apply --dry-run=client -f service.yaml
+          kubectl apply --dry-run=client -f ingress.yaml
