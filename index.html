@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>K8s Project — DevOps Journey</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #050b14;
+      --surface: #0a1628;
+      --border: #1a3a5c;
+      --accent: #00d4ff;
+      --accent2: #7c3aed;
+      --accent3: #06ffa5;
+      --text: #e2f0ff;
+      --muted: #5a7a9a;
+      --card: #0d1f35;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Syne', sans-serif;
+      overflow-x: hidden;
+      cursor: none;
+    }
+
+    /* Custom cursor */
+    .cursor {
+      width: 12px; height: 12px;
+      background: var(--accent);
+      border-radius: 50%;
+      position: fixed;
+      pointer-events: none;
+      z-index: 9999;
+      transition: transform 0.1s ease;
+      mix-blend-mode: screen;
+    }
+    .cursor-ring {
+      width: 36px; height: 36px;
+      border: 1.5px solid var(--accent);
+      border-radius: 50%;
+      position: fixed;
+      pointer-events: none;
+      z-index: 9998;
+      transition: all 0.15s ease;
+      mix-blend-mode: screen;
+      opacity: 0.5;
+    }
+
+    /* Grid background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Glowing orbs */
+    .orb {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(100px);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .orb1 { width: 500px; height: 500px; background: rgba(0,212,255,0.06); top: -100px; left: -100px; }
+    .orb2 { width: 400px; height: 400px; background: rgba(124,58,237,0.07); bottom: 100px; right: -100px; }
+    .orb3 { width: 300px; height: 300px; background: rgba(6,255,165,0.04); top: 50%; left: 50%; transform: translate(-50%,-50%); }
+
+    /* NAV */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1.2rem 3rem;
+      background: rgba(5,11,20,0.8);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(0,212,255,0.1);
+    }
+    .nav-logo {
+      font-family: 'Space Mono', monospace;
+      font-size: 1rem;
+      color: var(--accent);
+      letter-spacing: 0.1em;
+    }
+    .nav-logo span { color: var(--accent3); }
+    .nav-links { display: flex; gap: 2rem; list-style: none; }
+    .nav-links a {
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--accent); }
+    .nav-badge {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--accent3);
+      border: 1px solid var(--accent3);
+      padding: 0.25rem 0.75rem;
+      border-radius: 2px;
+      animation: pulse-border 2s infinite;
+    }
+    @keyframes pulse-border {
+      0%,100% { box-shadow: 0 0 0 0 rgba(6,255,165,0.3); }
+      50% { box-shadow: 0 0 0 6px rgba(6,255,165,0); }
+    }
+
+    /* HERO */
+    .hero {
+      position: relative; z-index: 1;
+      min-height: 100vh;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      text-align: center;
+      padding: 6rem 2rem 4rem;
+    }
+    .hero-eyebrow {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.72rem;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 1.5rem;
+      opacity: 0;
+      animation: fadeUp 0.6s 0.2s forwards;
+    }
+    .hero-eyebrow::before { content: '> '; color: var(--accent3); }
+
+    .k8s-wheel {
+      width: 120px; height: 120px;
+      margin: 0 auto 2.5rem;
+      position: relative;
+      opacity: 0;
+      animation: fadeUp 0.6s 0.3s forwards;
+    }
+    .k8s-wheel svg { width: 100%; height: 100%; }
+    .wheel-ring { animation: spin 20s linear infinite; transform-origin: center; }
+    .wheel-inner { animation: spin-reverse 15s linear infinite; transform-origin: center; }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes spin-reverse { to { transform: rotate(-360deg); } }
+
+    .hero h1 {
+      font-size: clamp(3rem, 8vw, 6.5rem);
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: -0.02em;
+      opacity: 0;
+      animation: fadeUp 0.6s 0.4s forwards;
+    }
+    .hero h1 .line1 { display: block; color: var(--text); }
+    .hero h1 .line2 {
+      display: block;
+      background: linear-gradient(90deg, var(--accent), var(--accent2), var(--accent3));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-sub {
+      font-size: 1.1rem;
+      color: var(--muted);
+      max-width: 560px;
+      margin: 1.5rem auto 0;
+      line-height: 1.7;
+      font-weight: 400;
+      opacity: 0;
+      animation: fadeUp 0.6s 0.5s forwards;
+    }
+    .hero-sub strong { color: var(--accent3); font-weight: 600; }
+
+    .hero-actions {
+      display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center;
+      margin-top: 2.5rem;
+      opacity: 0;
+      animation: fadeUp 0.6s 0.65s forwards;
+    }
+    .btn-primary {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      text-decoration: none;
+      padding: 0.85rem 2rem;
+      background: var(--accent);
+      color: var(--bg);
+      border: none;
+      border-radius: 3px;
+      cursor: none;
+      transition: all 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+    .btn-primary::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: rgba(255,255,255,0.15);
+      transform: translateX(-100%);
+      transition: transform 0.3s;
+    }
+    .btn-primary:hover::after { transform: translateX(0); }
+    .btn-primary:hover { box-shadow: 0 0 30px rgba(0,212,255,0.4); }
+
+    .btn-secondary {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      text-decoration: none;
+      padding: 0.85rem 2rem;
+      background: transparent;
+      color: var(--accent3);
+      border: 1px solid var(--accent3);
+      border-radius: 3px;
+      cursor: none;
+      transition: all 0.2s;
+    }
+    .btn-secondary:hover {
+      background: rgba(6,255,165,0.08);
+      box-shadow: 0 0 20px rgba(6,255,165,0.2);
+    }
+
+    .scroll-indicator {
+      position: absolute; bottom: 2.5rem;
+      display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
+      opacity: 0;
+      animation: fadeIn 1s 1.5s forwards;
+    }
+    .scroll-indicator span {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.2em;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+    .scroll-line {
+      width: 1px; height: 50px;
+      background: linear-gradient(to bottom, var(--accent), transparent);
+      animation: scroll-line 1.5s ease-in-out infinite;
+    }
+    @keyframes scroll-line {
+      0% { transform: scaleY(0); transform-origin: top; }
+      50% { transform: scaleY(1); transform-origin: top; }
+      51% { transform: scaleY(1); transform-origin: bottom; }
+      100% { transform: scaleY(0); transform-origin: bottom; }
+    }
+
+    /* ARCHITECTURE SECTION */
+    section { position: relative; z-index: 1; }
+
+    .section-label {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 0.75rem;
+    }
+    .section-label::before { content: '// '; color: var(--muted); }
+
+    .section-title {
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      font-weight: 800;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+    }
+
+    /* Architecture */
+    .arch-section {
+      padding: 6rem 2rem;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    .arch-header { margin-bottom: 3.5rem; }
+
+    .arch-diagram {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+
+    .arch-level {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.5rem;
+      background: var(--card);
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.3s, transform 0.3s;
+    }
+    .arch-level::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 3px;
+    }
+    .arch-level.control::before { background: var(--accent); }
+    .arch-level.worker::before { background: var(--accent2); }
+    .arch-level.storage::before { background: var(--accent3); }
+    .arch-level:hover { border-color: rgba(0,212,255,0.3); transform: translateY(-2px); }
+
+    .arch-level-label {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 1rem;
+    }
+    .arch-level.control .arch-level-label { color: var(--accent); }
+    .arch-level.worker .arch-level-label { color: var(--accent2); }
+    .arch-level.storage .arch-level-label { color: var(--accent3); }
+
+    .arch-components {
+      display: flex; flex-wrap: wrap; gap: 0.75rem;
+    }
+    .arch-component {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.75rem;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      background: rgba(0,0,0,0.3);
+      color: var(--text);
+      transition: all 0.2s;
+      cursor: default;
+    }
+    .arch-component:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(0,212,255,0.05);
+    }
+    .arch-component .dot {
+      display: inline-block;
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      margin-right: 0.5rem;
+      vertical-align: middle;
+    }
+    .control .dot { background: var(--accent); }
+    .worker .dot { background: var(--accent2); }
+    .storage .dot { background: var(--accent3); }
+
+    /* STATS */
+    .stats-section {
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 4rem 2rem;
+    }
+    .stats-grid {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 0;
+    }
+    .stat-item {
+      padding: 2rem;
+      border-right: 1px solid var(--border);
+      text-align: center;
+    }
+    .stat-item:last-child { border-right: none; }
+    .stat-number {
+      font-size: 2.8rem;
+      font-weight: 800;
+      font-family: 'Space Mono', monospace;
+      background: linear-gradient(135deg, var(--accent), var(--accent3));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      display: block;
+      line-height: 1;
+      margin-bottom: 0.5rem;
+    }
+    .stat-label {
+      font-size: 0.8rem;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    /* FEATURES */
+    .features-section {
+      padding: 6rem 2rem;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    .features-header { margin-bottom: 3.5rem; }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+    }
+    .feature-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 2rem;
+      transition: all 0.3s;
+      position: relative;
+      overflow: hidden;
+    }
+    .feature-card::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(0,212,255,0.03), transparent);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .feature-card:hover {
+      border-color: rgba(0,212,255,0.3);
+      transform: translateY(-4px);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+    }
+    .feature-card:hover::after { opacity: 1; }
+
+    .feature-icon {
+      width: 48px; height: 48px;
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem;
+      margin-bottom: 1.25rem;
+    }
+    .fi-blue { background: rgba(0,212,255,0.1); border: 1px solid rgba(0,212,255,0.2); }
+    .fi-purple { background: rgba(124,58,237,0.1); border: 1px solid rgba(124,58,237,0.2); }
+    .fi-green { background: rgba(6,255,165,0.1); border: 1px solid rgba(6,255,165,0.2); }
+    .fi-orange { background: rgba(255,165,0,0.1); border: 1px solid rgba(255,165,0,0.2); }
+    .fi-pink { background: rgba(255,100,150,0.1); border: 1px solid rgba(255,100,150,0.2); }
+    .fi-yellow { background: rgba(255,220,0,0.1); border: 1px solid rgba(255,220,0,0.2); }
+
+    .feature-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 0.6rem;
+    }
+    .feature-desc {
+      font-size: 0.88rem;
+      color: var(--muted);
+      line-height: 1.7;
+      font-weight: 400;
+    }
+
+    /* TERMINAL */
+    .terminal-section {
+      padding: 4rem 2rem 6rem;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    .terminal-header-bar { margin-bottom: 2rem; }
+
+    .terminal {
+      background: #010810;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      font-family: 'Space Mono', monospace;
+    }
+    .terminal-topbar {
+      background: #0a1628;
+      padding: 0.75rem 1.25rem;
+      display: flex; align-items: center; gap: 0.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .dot-red { width: 12px; height: 12px; border-radius: 50%; background: #ff5f57; }
+    .dot-yellow { width: 12px; height: 12px; border-radius: 50%; background: #febc2e; }
+    .dot-green { width: 12px; height: 12px; border-radius: 50%; background: #28c840; }
+    .terminal-title {
+      margin-left: auto; margin-right: auto;
+      font-size: 0.7rem;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+    }
+    .terminal-body { padding: 1.5rem; font-size: 0.8rem; line-height: 1.9; }
+    .t-prompt { color: var(--accent3); }
+    .t-cmd { color: var(--text); }
+    .t-comment { color: #3a5a7a; }
+    .t-output { color: var(--muted); }
+    .t-success { color: var(--accent3); }
+    .t-accent { color: var(--accent); }
+    .t-highlight { color: #febc2e; }
+    .t-line { margin-bottom: 0.2rem; }
+    .cursor-blink {
+      display: inline-block;
+      width: 8px; height: 14px;
+      background: var(--accent3);
+      animation: blink 1s step-end infinite;
+      vertical-align: middle;
+    }
+    @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
+
+    /* JOURNEY TIMELINE */
+    .journey-section {
+      padding: 6rem 2rem;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    .timeline { margin-top: 3rem; position: relative; }
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 20px; top: 0; bottom: 0;
+      width: 1px;
+      background: linear-gradient(to bottom, var(--accent), var(--accent2), var(--accent3), transparent);
+    }
+    .timeline-item {
+      padding-left: 60px;
+      padding-bottom: 2.5rem;
+      position: relative;
+    }
+    .timeline-dot {
+      position: absolute;
+      left: 12px; top: 4px;
+      width: 17px; height: 17px;
+      border-radius: 50%;
+      border: 2px solid var(--accent);
+      background: var(--bg);
+      transition: all 0.3s;
+    }
+    .timeline-dot.done { background: var(--accent); }
+    .timeline-dot.current {
+      background: var(--accent3);
+      border-color: var(--accent3);
+      box-shadow: 0 0 15px rgba(6,255,165,0.5);
+      animation: pulse-dot 2s infinite;
+    }
+    @keyframes pulse-dot {
+      0%,100% { box-shadow: 0 0 0 0 rgba(6,255,165,0.4); }
+      50% { box-shadow: 0 0 0 8px rgba(6,255,165,0); }
+    }
+    .timeline-date {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.65rem;
+      color: var(--muted);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-bottom: 0.35rem;
+    }
+    .timeline-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin-bottom: 0.4rem;
+    }
+    .timeline-desc {
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.6;
+      font-weight: 400;
+    }
+    .badge {
+      display: inline-block;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 0.2rem 0.6rem;
+      border-radius: 2px;
+      margin-left: 0.5rem;
+      vertical-align: middle;
+    }
+    .badge-done { background: rgba(0,212,255,0.1); color: var(--accent); border: 1px solid rgba(0,212,255,0.3); }
+    .badge-now { background: rgba(6,255,165,0.1); color: var(--accent3); border: 1px solid rgba(6,255,165,0.3); }
+    .badge-next { background: rgba(124,58,237,0.1); color: #a78bfa; border: 1px solid rgba(124,58,237,0.3); }
+
+    /* FOOTER */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 3rem 2rem;
+      max-width: 1100px;
+      margin: 0 auto;
+      display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;
+      gap: 1rem;
+      position: relative; z-index: 1;
+    }
+    .footer-brand {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+    .footer-brand strong { color: var(--accent); }
+    .footer-links { display: flex; gap: 1.5rem; }
+    .footer-links a {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .footer-links a:hover { color: var(--accent3); }
+    .footer-tag {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--accent3);
+    }
+
+    /* Animations */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; } to { opacity: 1; }
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    @media (max-width: 640px) {
+      nav { padding: 1rem 1.5rem; }
+      .nav-links { display: none; }
+      .stats-grid { grid-template-columns: 1fr 1fr; }
+      .stat-item:nth-child(2) { border-right: none; }
+      footer { flex-direction: column; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="cursor" id="cursor"></div>
+  <div class="cursor-ring" id="cursorRing"></div>
+
+  <div class="orb orb1"></div>
+  <div class="orb orb2"></div>
+  <div class="orb orb3"></div>
+
+  <!-- NAV -->
+  <nav>
+    <div class="nav-logo">k8s<span>://</span>devops</div>
+    <ul class="nav-links">
+      <li><a href="#architecture">Architecture</a></li>
+      <li><a href="#features">Features</a></li>
+      <li><a href="#commands">Commands</a></li>
+      <li><a href="#journey">Journey</a></li>
+    </ul>
+    <div class="nav-badge">● Live</div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <p class="hero-eyebrow">DevOps Project — Kubernetes</p>
+
+    <div class="k8s-wheel">
+      <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- Outer ring -->
+        <circle cx="60" cy="60" r="54" stroke="rgba(0,212,255,0.2)" stroke-width="1"/>
+        <g class="wheel-ring">
+          <circle cx="60" cy="6" r="6" fill="#00d4ff"/>
+          <circle cx="110" cy="33" r="6" fill="#00d4ff" opacity="0.7"/>
+          <circle cx="110" cy="87" r="6" fill="#00d4ff" opacity="0.5"/>
+          <circle cx="60" cy="114" r="6" fill="#00d4ff" opacity="0.3"/>
+          <circle cx="10" cy="87" r="6" fill="#00d4ff" opacity="0.5"/>
+          <circle cx="10" cy="33" r="6" fill="#00d4ff" opacity="0.7"/>
+          <!-- Spokes -->
+          <line x1="60" y1="12" x2="60" y2="42" stroke="rgba(0,212,255,0.4)" stroke-width="1.5"/>
+          <line x1="107" y1="36" x2="82" y2="51" stroke="rgba(0,212,255,0.4)" stroke-width="1.5"/>
+          <line x1="107" y1="84" x2="82" y2="69" stroke="rgba(0,212,255,0.4)" stroke-width="1.5"/>
+          <line x1="60" y1="108" x2="60" y2="78" stroke="rgba(0,212,255,0.4)" stroke-width="1.5"/>
+          <line x1="13" y1="84" x2="38" y2="69" stroke="rgba(0,212,255,0.4)" stroke-width="1.5"/>
+          <line x1="13" y1="36" x2="38" y2="51" stroke="rgba(0,212,255,0.4)" stroke-width="1.5"/>
+        </g>
+        <!-- Inner ring -->
+        <g class="wheel-inner">
+          <circle cx="60" cy="60" r="20" stroke="rgba(124,58,237,0.5)" stroke-width="1.5" stroke-dasharray="4 4"/>
+        </g>
+        <!-- Center -->
+        <circle cx="60" cy="60" r="12" fill="rgba(0,212,255,0.1)" stroke="#00d4ff" stroke-width="1.5"/>
+        <circle cx="60" cy="60" r="5" fill="#00d4ff"/>
+      </svg>
+    </div>
+
+    <h1>
+      <span class="line1">Kubernetes</span>
+      <span class="line2">Orchestration</span>
+    </h1>
+    <p class="hero-sub">
+      A production-grade container orchestration project built while mastering <strong>Kubernetes</strong> — automated deployments, scaling, and self-healing infrastructure.
+    </p>
+    <div class="hero-actions">
+      <a href="#architecture" class="btn-primary">Explore Architecture</a>
+      <a href="#commands" class="btn-secondary">View Commands</a>
+    </div>
+
+    <div class="scroll-indicator">
+      <span>Scroll</span>
+      <div class="scroll-line"></div>
+    </div>
+  </section>
+
+  <!-- STATS -->
+  <div class="stats-section reveal">
+    <div class="stats-grid">
+      <div class="stat-item">
+        <span class="stat-number">3</span>
+        <span class="stat-label">Worker Nodes</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-number">6</span>
+        <span class="stat-label">Microservices</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-number">99.9%</span>
+        <span class="stat-label">Uptime SLA</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-number">0s</span>
+        <span class="stat-label">Downtime Deploy</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ARCHITECTURE -->
+  <div id="architecture" class="arch-section">
+    <div class="arch-header reveal">
+      <p class="section-label">System Design</p>
+      <h2 class="section-title">Cluster Architecture</h2>
+    </div>
+    <div class="arch-diagram">
+      <div class="arch-level control reveal">
+        <div class="arch-level-label">Control Plane</div>
+        <div class="arch-components">
+          <div class="arch-component control"><span class="dot"></span>API Server</div>
+          <div class="arch-component control"><span class="dot"></span>etcd</div>
+          <div class="arch-component control"><span class="dot"></span>Scheduler</div>
+          <div class="arch-component control"><span class="dot"></span>Controller Manager</div>
+          <div class="arch-component control"><span class="dot"></span>Cloud Controller</div>
+        </div>
+      </div>
+      <div class="arch-level worker reveal">
+        <div class="arch-level-label">Worker Nodes</div>
+        <div class="arch-components">
+          <div class="arch-component worker"><span class="dot"></span>kubelet</div>
+          <div class="arch-component worker"><span class="dot"></span>kube-proxy</div>
+          <div class="arch-component worker"><span class="dot"></span>Container Runtime</div>
+          <div class="arch-component worker"><span class="dot"></span>Pods</div>
+          <div class="arch-component worker"><span class="dot"></span>ReplicaSets</div>
+          <div class="arch-component worker"><span class="dot"></span>Deployments</div>
+          <div class="arch-component worker"><span class="dot"></span>Services</div>
+          <div class="arch-component worker"><span class="dot"></span>Ingress</div>
+        </div>
+      </div>
+      <div class="arch-level storage reveal">
+        <div class="arch-level-label">Storage & Networking</div>
+        <div class="arch-components">
+          <div class="arch-component storage"><span class="dot"></span>PersistentVolume</div>
+          <div class="arch-component storage"><span class="dot"></span>PVC</div>
+          <div class="arch-component storage"><span class="dot"></span>ConfigMaps</div>
+          <div class="arch-component storage"><span class="dot"></span>Secrets</div>
+          <div class="arch-component storage"><span class="dot"></span>Namespaces</div>
+          <div class="arch-component storage"><span class="dot"></span>RBAC</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FEATURES -->
+  <div id="features" class="features-section">
+    <div class="features-header reveal">
+      <p class="section-label">Capabilities</p>
+      <h2 class="section-title">What This Project<br>Demonstrates</h2>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card reveal">
+        <div class="feature-icon fi-blue">⚡</div>
+        <div class="feature-title">Auto Scaling</div>
+        <div class="feature-desc">Horizontal Pod Autoscaler dynamically adjusts replicas based on CPU and memory metrics in real-time.</div>
+      </div>
+      <div class="feature-card reveal">
+        <div class="feature-icon fi-green">🔄</div>
+        <div class="feature-title">Zero Downtime Deploys</div>
+        <div class="feature-desc">Rolling updates ensure continuous availability with configurable surge and unavailability thresholds.</div>
+      </div>
+      <div class="feature-card reveal">
+        <div class="feature-icon fi-purple">🛡️</div>
+        <div class="feature-title">Self Healing</div>
+        <div class="feature-desc">Liveness and readiness probes automatically restart failed containers, maintaining declared desired state.</div>
+      </div>
+      <div class="feature-card reveal">
+        <div class="feature-icon fi-orange">📦</div>
+        <div class="feature-title">Service Discovery</div>
+        <div class="feature-desc">CoreDNS-powered internal service mesh for seamless pod-to-pod communication across namespaces.</div>
+      </div>
+      <div class="feature-card reveal">
+        <div class="feature-icon fi-pink">🔒</div>
+        <div class="feature-title">RBAC Security</div>
+        <div class="feature-desc">Role-based access control with least-privilege principles, Secrets encryption, and network policies.</div>
+      </div>
+      <div class="feature-card reveal">
+        <div class="feature-icon fi-yellow">📊</div>
+        <div class="feature-title">Observability</div>
+        <div class="feature-desc">Integrated logging, metrics collection, and health dashboards for full cluster visibility.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TERMINAL -->
+  <div id="commands" class="terminal-section">
+    <div class="terminal-header-bar reveal">
+      <p class="section-label">Hands-on Commands</p>
+      <h2 class="section-title">kubectl in Action</h2>
+    </div>
+    <div class="terminal reveal">
+      <div class="terminal-topbar">
+        <div class="dot-red"></div>
+        <div class="dot-yellow"></div>
+        <div class="dot-green"></div>
+        <div class="terminal-title">k8s-cluster — bash</div>
+      </div>
+      <div class="terminal-body">
+        <div class="t-line"><span class="t-comment"># Apply the deployment manifest</span></div>
+        <div class="t-line"><span class="t-prompt">$ </span><span class="t-cmd">kubectl apply -f deployment.yaml</span></div>
+        <div class="t-line"><span class="t-success">deployment.apps/my-app created</span></div>
+        <div class="t-line"><span class="t-success">service/my-app-svc created</span></div>
+        <br/>
+        <div class="t-line"><span class="t-comment"># Verify pods are running</span></div>
+        <div class="t-line"><span class="t-prompt">$ </span><span class="t-cmd">kubectl get pods -n production</span></div>
+        <div class="t-line"><span class="t-output">NAME                     READY   STATUS    RESTARTS   AGE</span></div>
+        <div class="t-line"><span class="t-accent">my-app-7d9fb4c89-x2kqp   1/1     Running   0          2m</span></div>
+        <div class="t-line"><span class="t-accent">my-app-7d9fb4c89-p8rvn   1/1     Running   0          2m</span></div>
+        <div class="t-line"><span class="t-accent">my-app-7d9fb4c89-tz4ms   1/1     Running   0          2m</span></div>
+        <br/>
+        <div class="t-line"><span class="t-comment"># Scale the deployment</span></div>
+        <div class="t-line"><span class="t-prompt">$ </span><span class="t-cmd">kubectl scale deployment my-app --replicas=5</span></div>
+        <div class="t-line"><span class="t-success">deployment.apps/my-app scaled</span></div>
+        <br/>
+        <div class="t-line"><span class="t-comment"># Check cluster nodes</span></div>
+        <div class="t-line"><span class="t-prompt">$ </span><span class="t-cmd">kubectl get nodes</span></div>
+        <div class="t-line"><span class="t-output">NAME           STATUS   ROLES           AGE   VERSION</span></div>
+        <div class="t-line"><span class="t-highlight">master-node    Ready    control-plane   5d    v1.28.0</span></div>
+        <div class="t-line"><span class="t-output">worker-node-1  Ready    &lt;none&gt;          5d    v1.28.0</span></div>
+        <div class="t-line"><span class="t-output">worker-node-2  Ready    &lt;none&gt;          5d    v1.28.0</span></div>
+        <div class="t-line"><span class="t-output">worker-node-3  Ready    &lt;none&gt;          5d    v1.28.0</span></div>
+        <br/>
+        <div class="t-line"><span class="t-prompt">$ </span><span class="cursor-blink"></span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- JOURNEY TIMELINE -->
+  <div id="journey" class="journey-section">
+    <div class="reveal">
+      <p class="section-label">Learning Path</p>
+      <h2 class="section-title">DevOps Journey</h2>
+    </div>
+    <div class="timeline">
+      <div class="timeline-item reveal">
+        <div class="timeline-dot done"></div>
+        <div class="timeline-date">Phase 01</div>
+        <div class="timeline-title">Linux & Shell Scripting <span class="badge badge-done">Done</span></div>
+        <div class="timeline-desc">Mastered Linux fundamentals, bash scripting, file systems, and process management.</div>
+      </div>
+      <div class="timeline-item reveal">
+        <div class="timeline-dot done"></div>
+        <div class="timeline-date">Phase 02</div>
+        <div class="timeline-title">Docker & Containers <span class="badge badge-done">Done</span></div>
+        <div class="timeline-desc">Built and containerized applications, managed images, volumes, and networks with Docker Compose.</div>
+      </div>
+      <div class="timeline-item reveal">
+        <div class="timeline-dot current"></div>
+        <div class="timeline-date">Phase 03</div>
+        <div class="timeline-title">Kubernetes <span class="badge badge-now">Now</span></div>
+        <div class="timeline-desc">Orchestrating containers at scale — deployments, services, ingress, HPA, RBAC, and persistent storage.</div>
+      </div>
+      <div class="timeline-item reveal">
+        <div class="timeline-dot"></div>
+        <div class="timeline-date">Phase 04</div>
+        <div class="timeline-title">CI/CD Pipelines <span class="badge badge-next">Next</span></div>
+        <div class="timeline-desc">Automating build, test, and deploy workflows with GitHub Actions and Jenkins.</div>
+      </div>
+      <div class="timeline-item reveal">
+        <div class="timeline-dot"></div>
+        <div class="timeline-date">Phase 05</div>
+        <div class="timeline-title">Cloud & IaC <span class="badge badge-next">Next</span></div>
+        <div class="timeline-desc">AWS/GCP infrastructure-as-code with Terraform and Helm chart deployments.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-brand">Built by <strong>DevOps Engineer in Progress</strong> — learning one tool at a time</div>
+    <div class="footer-links">
+      <a href="#">GitHub</a>
+      <a href="#">LinkedIn</a>
+      <a href="#">Portfolio</a>
+    </div>
+    <div class="footer-tag">k8s v1.28 ✦ 2024</div>
+  </footer>
+
+  <script>
+    // Custom cursor
+    const cursor = document.getElementById('cur);
+    const ring = document.getElementById('cursorRing');
+    let mx = 0, my = 0, rx = 0, ry = 0;
+    document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
+    function animCursor() {
+      cursor.style.left = mx - 6 + 'px';
+      cursor.style.top  = my - 6 + 'px';
+      rx += (mx - rx) * 0.12;
+      ry += (my - ry) * 0.12;
+      ring.style.left = rx - 18 + 'px';
+      ring.style.top  = ry - 18 + 'px';
+      requestAnimationFrame(animCursor);
+    }
+    animCursor();
+    document.querySelectorAll('a, button, .feature-card, .arch-component').forEach(el => {
+      el.addEventListener('mouseenter', () => { cursor.style.transform = 'scale(2)'; ring.style.transform = 'scale(1.5)'; });
+      el.addEventListener('mouseleave', () => { cursor.style.transform = 'scale(1)'; ring.style.transform = 'scale(1)'; });
+    });
+
+    // Scroll reveal
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach((entry, i) => {
+        if (entry.isIntersecting) {
+          setTimeout(() => entry.target.classList.add('visible'), 80 * i);
+        }
+      });
+    }, { threshold: 0.1 });
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+    // Animated stat counters
+    function animCount(el, target, suffix='') {
+      let start = 0;
+      const isFloat = target.toString().includes('.');
+      const duration = 1600;
+      const step = timestamp => {
+        if (!start) start = timestamp;
+        const progress = Math.min((timestamp - start) / duration, 1);
+        const val = isFloat ? (progress * parseFloat(target)).toFixed(1) : Math.floor(progress * parseInt(target));
+        el.textContent = val + suffix;
+        if (progress < 1) requestAnimationFrame(step);
+        else el.textContent = target + suffix;
+      };
+      requestAnimationFrame(step);
+    }
+    const statObserver = new IntersectionObserver(entries => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          const nums = e.target.querySelectorAll('.stat-number');
+          nums.forEach(n => {
+            const raw = n.textContent;
+            if (raw.includes('%')) animCount(n, parseFloat(raw), '%');
+            else if (raw === '0s') { /* keep */ }
+            else animCount(n, parseInt(raw), '');
+          });
+          statObserver.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.5 });
+    document.querySelectorAll('.stats-grid').forEach(el => statObserver.observe(el));
+  </script>
+</body>
+</html>
