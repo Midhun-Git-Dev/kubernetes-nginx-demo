@@ -21,9 +21,9 @@ jobs:
 
       - name: Validate Kubernetes YAML
         run: |
-          kubectl apply --dry-run=client --validate=false -f namespace.yaml
-          kubectl apply --dry-run=client --validate=false -f configmap.yaml
-          kubectl apply --dry-run=client --validate=false -f secret.yaml
-          kubectl apply --dry-run=client --validate=false -f deployment.yaml
-          kubectl apply --dry-run=client --validate=false -f service.yaml
-          kubectl apply --dry-run=client --validate=false -f ingress.yaml
+          kubectl create --dry-run=client --validate=false -f namespace.yaml
+          kubectl create --dry-run=client --validate=false -f configmap.yaml
+          kubectl create --dry-run=client --validate=false -f secret.yaml
+          kubectl create --dry-run=client --validate=false -f deployment.yaml
+          kubectl create --dry-run=client --validate=false -f service.yaml
+          kubectl create --dry-run=client --validate=false -f ingress.yaml
