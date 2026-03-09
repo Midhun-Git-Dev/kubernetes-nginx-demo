@@ -1,4 +1,3 @@
-
 name: Kubernetes CI
 
 on:
@@ -14,16 +13,16 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
-      - name: Install kubectl
-        uses: azure/setup-kubectl@v3
-        with:
-          version: 'latest'
+      - name: Install kubeconform
+        run: |
+          curl -L https://github.com/yannh/kubeconform/releases/latest/download/kubeconform-linux-amd64.tar.gz | tar xz
+          sudo mv kubeconform /usr/local/bin/
 
       - name: Validate Kubernetes YAML
         run: |
-          kubectl create --dry-run=client --validate=false -f namespace.yaml
-          kubectl create --dry-run=client --validate=false -f configmap.yaml
-          kubectl create --dry-run=client --validate=false -f secret.yaml
-          kubectl create --dry-run=client --validate=false -f deployment.yaml
-          kubectl create --dry-run=client --validate=false -f service.yaml
-          kubectl create --dry-run=client --validate=false -f ingress.yaml
+          kubeconform namespace.yaml
+          kubeconform configmap.yaml
+          kubeconform secret.yaml
+          kubeconform deployment.yaml
+          kubeconform service.yaml
+          kubeconform ingress.yaml
